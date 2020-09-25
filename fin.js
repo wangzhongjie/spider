@@ -87,13 +87,7 @@ function isNull(obj){
 }
 
 var urls=[
-    'http://www.wuliangye.com.cn/zh/main/main.html#/g=NEWS&id=34', //五粮液动态
-    'http://www.csrc.gov.cn/pub/newsite/zjhxwfb/xwdd/',  //证监会要闻
-
     'http://www.gov.cn/pushinfo/v150203/', //国务院信息
-
-
-
 ];
 
 urls.forEach(function (url) {

@@ -1,40 +1,14 @@
-var cheerio = require('cheerio');
 var http = require('http');
+var cheerio = require('cheerio');
 var iconv = require('iconv-lite');
-var moment = require('moment');
-var setting = require('./setting');
 
-var dealTime=setting.dealTime;
-var model=setting.model;
+function gbk(url, callback) {
+	return function onRequest(req, res) {
+		var htmlData = [];
+		var htmlDataLength = 0;
 
-var urls=[
-	'http://stock.stockstar.com/list/strategy.htm',		//趋势策略
-	'http://stock.stockstar.com/list/opportunity.htm',	//机会挖掘
-	'http://stock.stockstar.com/list/live.htm',			//股市直击
-	'http://stock.stockstar.com/list/headlines.htm',	//证券要闻
-	'http://stock.stockstar.com/list/10_1.shtml',		//公司新闻
-	'http://stock.stockstar.com/list/10_2.shtml',
-	'http://stock.stockstar.com/list/main.htm',		//主力研究
-	'http://stock.stockstar.com/list/76_1.shtml',  //公司公告
-	'http://stock.stockstar.com/list/76_2.shtml',
-	'http://stock.stockstar.com/list/76_3.shtml',
-	'http://stock.stockstar.com/list/76_4.shtml',
-	'http://stock.stockstar.com/list/76_5.shtml',
-	'http://stock.stockstar.com/list/76_6.shtml',
-	'http://stock.stockstar.com/list/76_7.shtml',
-	'http://stock.stockstar.com/list/76_8.shtml',
-	'http://stock.stockstar.com/list/76_9.shtml',
-	'http://stock.stockstar.com/list/76_10.shtml',
-];
-var fetchPageUrl = [];
-var curData=[];
-
-var htmlData = [];
-var htmlDataLength = 0;
-
-function getPageAsync(url){  //使用Promise对象来包装获取到页面的html的方法
-	return new Promise(function (resolve, reject) {
-		// console.log('正在爬取 ' + url + '\n');
+		res.writeHead(200, {'Content-Type': 'text/html;charset=utf-8'});
+		http.globalAgent = 'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1';
 
 		http.get(url, function (res) {
 
@@ -83,70 +57,13 @@ function getPageAsync(url){  //使用Promise对象来包装获取到页面的htm
 					decodeHtmlData = iconv.decode(bufferHtmlData, 'utf8');
 				}
 
-				// console.log(charset);
+				console.log(charset);
 
-				var html=cheerio.load(decodeHtmlData, {decodeEntities: false});
-
-				resolve(html);   //把当前的获取到页面的html返回回去（传递下去）
-
+				callback(cheerio.load(decodeHtmlData, {decodeEntities: false}), res);
 			});
 
-		}).on('error', function (e) {
-			reject(e);
-			console.log('爬取页面失败');
 		});
-	})
+	}
 }
 
-
-function setHtml(html){
-	var $=html;
-	var title='',
-		time='',
-		href='',
-		tmpArr=[];
-	var str='', publishTime, now=moment(new Date()).format('YYYYMMDD');
-	var todayIndex=dealTime.indexOf(Number(now));
-	var pointTime='', prevPoint=null;
-
-
-	if(model){ //盘前
-		pointTime=dealTime[todayIndex-1]+' 13:00:00';   //20171013 13:00:00
-		prevPoint=moment(pointTime, 'YYYYMMDD HH:mm:ss').format('X');
-	}else{
-		pointTime=now+' 09:30:00';   //20171014 09:30:00
-		prevPoint=moment(pointTime, 'YYYYMMDD HH:mm:ss').format('X');
-	}
-
-	var news = $('.listnews li').not('.space');
-
-	for (var i = 0; i < news.length; i++) {
-		title= news.find('a').eq(i).text();
-		href= news.find('a').eq(i).attr('href');
-		time= news.find('span').eq(i).text();
-
-		publishTime=moment(time, 'YYYY-MM-DD HH:mm:ss').format('X');
-		if(time=='' || time==null || time==undefined || title=='' || title==undefined || title==null || publishTime<prevPoint) continue;
-
-		str='<i>'+time+'</i> '+'<a target="_blank" href="'+href+'">'+title+'</a>';
-		tmpArr.push(str);
-	}
-	return tmpArr;
-}
-
-urls.forEach(function (item) {
-	fetchPageUrl.push(getPageAsync(item));
-});
-
-Promise
-	.all(fetchPageUrl)//针对每个url地址返回的页面HTML源码并发操作进行爬取
-	.then(function (pages) {
-		pages.forEach(function (html) {
-			curData=setHtml(html);
-		});
-
-		curData.forEach(function (item) {  //不能在pages.forEash里输出，否则会多次加载，原因未知
-			console.log(item);
-		})
-	});
-
+exports.gbk=gbk;
