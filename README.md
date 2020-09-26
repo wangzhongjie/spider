@@ -3,16 +3,6 @@
 
 
 
-运行方式
-```
-node index.js
-```
-
-## 相关博文
-
-
-
-
 
 # License
 [MIT](http://opensource.org/licenses/MIT)
