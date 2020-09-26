@@ -11,5 +11,5 @@ node index.js
 
 
 
-## license 
-MIT
+# License
+[MIT](http://opensource.org/licenses/MIT)
